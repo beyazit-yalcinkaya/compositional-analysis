@@ -13,7 +13,7 @@ class Lead(WebotsObject):
 class Follower(WebotsObject):
     webotsName: "FOLLOWER"
 
-class Obstacle(WebotsObject):
+class ObstacleS(WebotsObject):
     webotsName: "OBSTACLE"
     color: Options([[0.0, 0.0, 0.0],
                     [0.5, 0.0, 0.0],
@@ -43,7 +43,7 @@ s = Subscenario
 
 x_space = list(np.linspace(35.5, 38.5, num=50)) + list(np.linspace(51.5, 54.5, num=50))
 y_space = list(np.linspace(-25.5, -10.5, num=100))
-obstacle = Obstacle at Uniform(*x_space) @ Uniform(*y_space)
+obstacle = ObstacleS at Uniform(*x_space) @ Uniform(*y_space)
 
 samples = np.genfromtxt(MODE + "_csvs/subscenario1_post_conditions.csv", delimiter=",", names=True)
 sample = Uniform(*samples)

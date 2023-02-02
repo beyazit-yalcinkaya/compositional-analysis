@@ -31,6 +31,8 @@ class Task(webots_task):
         self.epsilon = 0.01
         self.sample_ind = 0
         self.mode = None
+        self.ind = None
+        self.monolithic_scenario_convergence_flags = {"L": False, "S": False, "R": False}
 
     def use_sample(self, sample):
         self.sample_ind += 1
@@ -43,39 +45,38 @@ class Task(webots_task):
         oil_barrel_2 = self.supervisor.getFromDef("OIL_BARREL_2")
         oil_barrel_3 = self.supervisor.getFromDef("OIL_BARREL_3")
         is_obstacle_found = False
+        obstacle_positions = {}
+        obstacle_headings = {}
+        obstacle_colors = {}
         for obj in sample.objects:
             if obj.webotsName == "SUBSCENARIO":
+                self.ind = obj.ind[-1]
                 self.subscenario = "subscenario" + obj.ind
                 self.mode = obj.mode
                 controller_arg = lead.getField("controllerArgs").getMFString(0)
                 if controller_arg == "" or controller_arg not in obj.ind:
                     if "L" in obj.ind:
                         lead.getField("controllerArgs").setMFString(0, "L")
-                        lead.restartController()
                     elif "S" in obj.ind:
                         lead.getField("controllerArgs").setMFString(0, "S")
-                        lead.restartController()
                     elif "R" in obj.ind:
                         lead.getField("controllerArgs").setMFString(0, "R")
-                        lead.restartController()
-                    else:
-                        pass
+                    ego.restartController()
+                    lead.restartController()
             elif obj.webotsName == "SCENARIO":
-                self.subscenario = "scenario" + obj.ind
+                self.ind = obj.ind
+                self.subscenario = "scenario"
                 self.mode = obj.mode
                 controller_arg = lead.getField("controllerArgs").getMFString(0)
                 if controller_arg == "" or controller_arg not in obj.ind:
                     if "L" in obj.ind:
                         lead.getField("controllerArgs").setMFString(0, "L")
-                        lead.restartController()
                     elif "S" in obj.ind:
                         lead.getField("controllerArgs").setMFString(0, "S")
-                        lead.restartController()
                     elif "R" in obj.ind:
                         lead.getField("controllerArgs").setMFString(0, "R")
-                        lead.restartController()
-                    else:
-                        pass
+                    ego.restartController()
+                    lead.restartController()
             elif obj.webotsName == "FOLLOWER":
                 position = ego.getField("translation").getSFVec3f()
                 position[0], position[1] = obj.position
@@ -94,13 +95,9 @@ class Task(webots_task):
                 lead.getField("rotation").setSFRotation(heading)
             elif obj.webotsName == "OBSTACLE":
                 is_obstacle_found = True
-                position = obstacle.getField("translation").getSFVec3f()
-                position[0], position[1] = obj.position
-                obstacle.getField("translation").setSFVec3f(position)
-                heading = obstacle.getField("rotation").getSFRotation()
-                heading[3] = obj.heading
-                obstacle.getField("rotation").setSFRotation(heading)
-                obstacle.getField("appearance").getSFNode().getField("baseColor").setSFColor(obj.color)
+                obstacle_positions[obj.type[-1]] = obj.position
+                obstacle_headings[obj.type[-1]] = obj.heading
+                obstacle_colors[obj.type[-1]] = obj.color
             elif obj.webotsName == "OIL_BARREL_1":
                 position = oil_barrel_1.getField("translation").getSFVec3f()
                 position[0], position[1] = obj.position
@@ -122,7 +119,15 @@ class Task(webots_task):
                 heading = oil_barrel_3.getField("rotation").getSFRotation()
                 heading[3] = obj.heading
                 oil_barrel_3.getField("rotation").setSFRotation(heading)
-        if not is_obstacle_found:
+        if is_obstacle_found:
+            position = obstacle.getField("translation").getSFVec3f()
+            position[0], position[1] = obstacle_positions[self.ind]
+            obstacle.getField("translation").setSFVec3f(position)
+            heading = obstacle.getField("rotation").getSFRotation()
+            heading[3] = obstacle_headings[self.ind]
+            obstacle.getField("rotation").setSFRotation(heading)
+            obstacle.getField("appearance").getSFNode().getField("baseColor").setSFColor(obstacle_colors[self.ind])
+        else:
             obstacle.getField("translation").setSFVec3f([-100.0, -100.0, -100.0])
         self.supervisor.step(TIME_STEP)
         ego.moveViewpoint()
@@ -150,6 +155,8 @@ class Task(webots_task):
 
     def run_task(self, sample):
         ego, lead = self.use_sample(sample)
+        with open(self.mode + "_csvs/" + self.subscenario + "_samples.csv", "a") as f:
+            f.write(str(self.sample_ind) + "," + str(sample) + "\n")
         ego_x, ego_y, _ = ego.getPosition()
         lead_x, lead_y, _ = lead.getPosition()
         sim_steps = 0
@@ -158,9 +165,9 @@ class Task(webots_task):
                (self.subscenario != "subscenario2S" or (ego_y < -5.5 and lead_y < 4.5)) and
                (self.subscenario != "subscenario2R" or (ego_y < -14.5 and lead_y < -4.5)) and 
                ((ego_y < -78.5 and lead_y < -68.5) or
-                ((self.subscenario != "scenarioL" or (ego_x > 5.5 and lead_x > -4.5)) and
-                 (self.subscenario != "scenarioS" or (ego_y < -5.5 and lead_y < 4.5)) and
-                 (self.subscenario != "scenarioR" or (ego_y < -14.5 and lead_y < -4.5))))):
+                ((self.subscenario + self.ind != "scenarioL" or (ego_x > 5.5 and lead_x > -4.5)) and
+                 (self.subscenario + self.ind != "scenarioS" or (ego_y < -5.5 and lead_y < 4.5)) and
+                 (self.subscenario + self.ind != "scenarioR" or (ego_y < -14.5 and lead_y < -4.5))))):
             self.supervisor.step(TIME_STEP)
             sim_steps += 1
             ego_x, ego_y, _ = ego.getPosition()
@@ -176,12 +183,33 @@ class Task(webots_task):
             ego_heading = self._get_heading(ego)
             lead_x, lead_y, _ = lead.getPosition()
             lead_heading = self._get_heading(lead)
-            with open(self.mode + "_csvs/" + self.subscenario + "_post_conditions.csv", "a") as f:
-                f.write(str(ego_x) + "," + str(ego_y) + "," + str(ego_heading) + "," + str(lead_x) + "," + str(lead_y) + "," + str(lead_heading) + "\n")
+            post_conditions = np.genfromtxt(self.mode + "_csvs/" + self.subscenario + "_post_conditions.csv", delimiter=",", skip_header=True)
+            delta = 1
+            point = np.array([ego_x, ego_y, ego_heading, lead_x, lead_y, lead_heading])
+            if post_conditions.ndim == 2 and post_conditions.size > 1:
+                delta = min(max(abs(point_i - point)) for point_i in post_conditions)
+            print("Delta:", delta)
+            print("Point:", point)
+            if delta > self.epsilon:
+                with open(self.mode + "_csvs/" + self.subscenario + "_post_conditions.csv", "a") as f:
+                    f.write(str(ego_x) + "," + str(ego_y) + "," + str(ego_heading) + "," + str(lead_x) + "," + str(lead_y) + "," + str(lead_heading) + "\n")
+            else:
+                if self.subscenario == "scenario": # Monolithic
+                    self.monolithic_scenario_convergence_flags[self.ind] = True
+                    if (self.monolithic_scenario_convergence_flags[self.ind]["L"] and
+                        self.monolithic_scenario_convergence_flags[self.ind]["S"] and
+                        self.monolithic_scenario_convergence_flags[self.ind]["R"]): # All convergenced
+                        print("Post conditions stabilized.")
+                        return {} # This causes a ValueError that is catched by the analyze script.
+                    else:
+                        pass
+                else:
+                    print("Post conditions stabilized.")
+                    return {} # This causes a ValueError that is catched by the analyze script.
         else:
             if self.mode == "falsify":
                 print("Falsification ended successfully.")
-                sys.exit()
+                sys.exit() # This causes a EOFError that is catched by the analyze script.
             else:
                 pass
         sim_results = {}
