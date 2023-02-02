@@ -25,13 +25,12 @@ import sys
 TIME_STEP = 10
 
 class Task(webots_task):
-    def __init__(self, N_SIM_STEPS, supervisor, mode):
+    def __init__(self, N_SIM_STEPS, supervisor):
         super().__init__(N_SIM_STEPS, supervisor)
         self.trajectory = []
         self.epsilon = 0.01
         self.sample_ind = 0
-        self.mode = mode
-        assert self.mode in ["falsify", "smc"]
+        self.mode = None
 
     def use_sample(self, sample):
         self.sample_ind += 1
@@ -47,6 +46,7 @@ class Task(webots_task):
         for obj in sample.objects:
             if obj.webotsName == "SUBSCENARIO":
                 self.subscenario = "subscenario" + obj.ind
+                self.mode = obj.mode
                 controller_arg = lead.getField("controllerArgs").getMFString(0)
                 if controller_arg == "" or controller_arg not in obj.ind:
                     if "L" in obj.ind:
@@ -62,6 +62,7 @@ class Task(webots_task):
                         pass
             elif obj.webotsName == "SCENARIO":
                 self.subscenario = "scenario" + obj.ind
+                self.mode = obj.mode
                 controller_arg = lead.getField("controllerArgs").getMFString(0)
                 if controller_arg == "" or controller_arg not in obj.ind:
                     if "L" in obj.ind:
@@ -194,7 +195,7 @@ supervisor = Supervisor()
 simulation_data = DotMap()
 simulation_data.port = PORT
 simulation_data.bufsize = BUFSIZE
-simulation_data.task = Task(N_SIM_STEPS=N_SIM_STEPS, supervisor=supervisor, mode="smc")
+simulation_data.task = Task(N_SIM_STEPS=N_SIM_STEPS, supervisor=supervisor)
 client_task = ClientWebots(simulation_data)
 while True:
     try:

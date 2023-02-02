@@ -1,4 +1,3 @@
-
 from verifai.samplers.scenic_sampler import ScenicSampler
 from verifai.scenic_server import ScenicServer
 from dotmap import DotMap
@@ -7,6 +6,7 @@ from verifai.features.features import *
 from verifai.monitor import specification_monitor, mtl_specification
 from time import sleep
 import pickle
+import math
 import sys
 import os
 
@@ -16,18 +16,38 @@ BUFSIZE = 4096
 
 MODE = sys.argv[1]
 assert MODE in ["falsify", "smc"]
+print("Mode:", MODE)
 
-MAX_ITERS = int(sys.argv[2])
-assert MAX_ITERS > 0
-
-if MODE == "falsify":
-    ALPHA = float(sys.argv[3])
-    assert (ALPHA > 0.0) and (ALPHA <= 1.0) and (MAX_ITERS*ALPHA == int(MAX_ITERS*ALPHA)) and (1/ALPHA == int(1/ALPHA))
-else:
-    ALPHA = 1.0
-
-METHOD = sys.argv[4]
+METHOD = sys.argv[2]
 assert METHOD in ["compositional", "monolithic"]
+print("Method:", METHOD)
+
+ALPHA = float(sys.argv[3]) # Typical values: [0.05, 0.03, 0.01]
+assert ALPHA > 0 and ALPHA <= 1
+print("Alpha:", ALPHA)
+
+EPSILON = float(sys.argv[4]) # Typical values: [0.1, 0.05, 0.01]
+assert EPSILON > 0 and EPSILON <= 1
+print("Epsilon:", EPSILON)
+
+SIGMA = float(sys.argv[5])
+assert (SIGMA > 0.0) and (SIGMA <= 1.0)
+print("Sigma:", SIGMA)
+
+MAX_ITERS = math.ceil(math.log(2/ALPHA)/(2*(EPSILON**2)))
+assert MAX_ITERS > 0
+print("Maximum Number of Iterations:", MAX_ITERS)
+
+BATCH_SIZE = math.ceil(MAX_ITERS*SIGMA)
+assert BATCH_SIZE > 0
+print("Batch Size:", BATCH_SIZE)
+
+BATCHED_ITERS = math.ceil(1/SIGMA)
+assert BATCHED_ITERS > 0
+print("Number of Batched Iterations:", BATCHED_ITERS)
+
+with open("mode.txt", "w+") as f:
+    f.write(MODE)
 
 def get_falsifier(scenario, specification):
 
@@ -35,7 +55,7 @@ def get_falsifier(scenario, specification):
     sampler = ScenicSampler.fromScenario(path)
 
     falsifier_params = DotMap(
-        n_iters=MAX_ITERS*ALPHA if MODE == "falsify" else MAX_ITERS,
+        n_iters=BATCH_SIZE if MODE == "falsify" else MAX_ITERS,
         save_error_table=True,
         save_safe_table=True
     )
@@ -71,19 +91,11 @@ for subscenario in subscenarios:
 specification = ["G(distance)"]
 
 if MODE == "falsify":
-    concurrent_iteration_num = int(1/ALPHA)
-else:
-    concurrent_iteration_num = 1
-
-for i in range(concurrent_iteration_num):
-    if MODE == "falsify":
-        print("Concurrent Iteration", i)
-    for subscenario in subscenarios:
-
-        falsifier = get_falsifier(subscenario + ".scenic", specification)
-
-        print("Falsifier is running for " + subscenario + "...")
-        if MODE == "falsify":
+    for i in range(BATCHED_ITERS):
+        print("Batched Iteration", i)
+        for subscenario in subscenarios:
+            falsifier = get_falsifier(subscenario + ".scenic", specification)
+            print("Falsifier is running for " + subscenario + "...")
             try:
                 falsifier.run_falsifier()
             except EOFError as e:
@@ -93,20 +105,18 @@ for i in range(concurrent_iteration_num):
                 print("Sleeping for 60 seconds...")
                 sleep(60)
                 sys.exit()
-        else:
-            falsifier.run_falsifier()
-
-        # print("Scenic samples for " + subscenario + "...")
-        # for i in falsifier.samples.keys():
-        #     print("Sample: ", i)
-        #     print(falsifier.samples[i])
-
-        # print("Error table for " + subscenario + "...")
-        # print(falsifier.error_table.table)
-
+            print("Done.")
+            falsifier.error_table.table.to_csv(MODE + "_csvs/" + subscenario + "_error_table.csv", index=False)
+            falsifier.safe_table.table.to_csv(MODE + "_csvs/" + subscenario + "_safe_table.csv", index=False)
+            print("Sleeping for 60 seconds...")
+            sleep(60)
+else:
+    for subscenario in subscenarios:
+        falsifier = get_falsifier(subscenario + ".scenic", specification)
+        print("Falsifier is running for " + subscenario + "...")
+        falsifier.run_falsifier()
         print("Done.")
         falsifier.error_table.table.to_csv(MODE + "_csvs/" + subscenario + "_error_table.csv", index=False)
         falsifier.safe_table.table.to_csv(MODE + "_csvs/" + subscenario + "_safe_table.csv", index=False)
-
         print("Sleeping for 60 seconds...")
         sleep(60)

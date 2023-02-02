@@ -2,6 +2,11 @@ from scenic.simulators.webots.model import WebotsObject
 
 import numpy as np
 
+MODE = None
+with open("mode.txt", "r") as f:
+    MODE = f.read()
+assert MODE is not None
+
 class Lead(WebotsObject):
     webotsName: "LEAD"
 
@@ -32,6 +37,7 @@ class OilBarrel3(WebotsObject):
 class Subscenario(WebotsObject):
     webotsName: "SUBSCENARIO"
     ind: "2S"
+    mode: MODE
 
 s = Subscenario
 
@@ -39,7 +45,7 @@ x_space = list(np.linspace(35.5, 38.5, num=50)) + list(np.linspace(51.5, 54.5, n
 y_space = list(np.linspace(-25.5, -10.5, num=100))
 obstacle = Obstacle at Uniform(*x_space) @ Uniform(*y_space)
 
-samples = np.genfromtxt("smc_csvs/subscenario1_post_conditions.csv", delimiter=",", names=True)
+samples = np.genfromtxt(MODE + "_csvs/subscenario1_post_conditions.csv", delimiter=",", names=True)
 sample = Uniform(*samples)
 
 ego = Follower at sample[0] @ sample[1], facing sample[2]*57.2958 deg

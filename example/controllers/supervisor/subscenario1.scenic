@@ -2,6 +2,11 @@ from scenic.simulators.webots.model import WebotsObject
 
 import numpy as np
 
+MODE = None
+with open("mode.txt", "r") as f:
+    MODE = f.read()
+assert MODE is not None
+
 class Lead(WebotsObject):
     webotsName: "LEAD"
 
@@ -32,6 +37,7 @@ class OilBarrel3(WebotsObject):
 class Subscenario(WebotsObject):
     webotsName: "SUBSCENARIO"
     ind: "1"
+    mode: MODE
 
 s = Subscenario
 
