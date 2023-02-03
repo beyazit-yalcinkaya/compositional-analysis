@@ -55,7 +55,7 @@ def get_falsifier(scenario, specification):
 
     falsifier = mtl_falsifier(
         sampler=sampler,
-        sampler_type="random",
+        sampler_type="halton",
         specification=specification,
         falsifier_params=falsifier_params,
         server_options=server_options
