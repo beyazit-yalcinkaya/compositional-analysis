@@ -48,5 +48,5 @@ for i in range(2, np.size(s, axis=0)):
 	previous_sem = sem
 sems = np.array(sems)
 # sems = sems / np.max(sems, axis=0)
-plt.plot(delta_sems[450:])
+plt.plot(delta_sems)
 plt.show()
