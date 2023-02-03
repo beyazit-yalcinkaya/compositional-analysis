@@ -80,7 +80,8 @@ for subscenario_group in subscenario_groups:
             f.write("sample_ind,rho,sim_steps\n")
         with open(MODE + "_csvs/" + subscenario + "_samples.csv", "+w") as f:
             f.write("sample_ind,sample\n")
-sys.exit()
+# sys.exit()
+
 specification = ["G(distance)"]
 
 if MODE == "falsify":
