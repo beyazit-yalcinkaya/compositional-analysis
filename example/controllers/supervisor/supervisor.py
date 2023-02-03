@@ -28,11 +28,12 @@ class Task(webots_task):
     def __init__(self, N_SIM_STEPS, supervisor):
         super().__init__(N_SIM_STEPS, supervisor)
         self.trajectory = []
-        self.epsilon = 0.01
+        self.epsilon = 0.001
         self.sample_ind = 0
         self.mode = None
         self.ind = None
         self.monolithic_scenario_convergence_flags = {"L": False, "S": False, "R": False}
+        self.previous_sem = None
 
     def use_sample(self, sample):
         self.sample_ind += 1
@@ -184,28 +185,19 @@ class Task(webots_task):
             lead_x, lead_y, _ = lead.getPosition()
             lead_heading = self._get_heading(lead)
             post_conditions = np.genfromtxt(self.mode + "_csvs/" + self.subscenario + "_post_conditions.csv", delimiter=",", skip_header=True)
-            delta = 1
+            delta_sem = None
             point = np.array([ego_x, ego_y, ego_heading, lead_x, lead_y, lead_heading])
             if post_conditions.ndim == 2 and post_conditions.size > 1:
-                delta = min(max(abs(point_i - point)) for point_i in post_conditions)
-            print("Delta:", delta)
-            print("Point:", point)
-            if delta > self.epsilon:
-                with open(self.mode + "_csvs/" + self.subscenario + "_post_conditions.csv", "a") as f:
-                    f.write(str(ego_x) + "," + str(ego_y) + "," + str(ego_heading) + "," + str(lead_x) + "," + str(lead_y) + "," + str(lead_heading) + "\n")
-            else:
-                if self.subscenario == "scenario": # Monolithic
-                    self.monolithic_scenario_convergence_flags[self.ind] = True
-                    if (self.monolithic_scenario_convergence_flags[self.ind]["L"] and
-                        self.monolithic_scenario_convergence_flags[self.ind]["S"] and
-                        self.monolithic_scenario_convergence_flags[self.ind]["R"]): # All convergenced
-                        print("Post conditions stabilized.")
-                        return {} # This causes a ValueError that is catched by the analyze script.
-                    else:
-                        pass
-                else:
-                    print("Post conditions stabilized.")
-                    return {} # This causes a ValueError that is catched by the analyze script.
+                sem = np.std(post_conditions, ddof=1, axis=0) / np.sqrt(np.size(post_conditions, axis=0))
+                if self.previous_sem is not None:
+                    delta_sem = abs(self.previous_sem - sem)
+                self.previous_sem = sem
+            print("Delta SEM:", delta_sem)
+            with open(self.mode + "_csvs/" + self.subscenario + "_post_conditions.csv", "a") as f:
+                f.write(str(ego_x) + "," + str(ego_y) + "," + str(ego_heading) + "," + str(lead_x) + "," + str(lead_y) + "," + str(lead_heading) + "\n")
+            if delta_sem is not None and np.all(delta_sem <= self.epsilon):
+                print("Post conditions stabilized.")
+                return {} # This causes a ValueError that is catched by the analyze script.
         else:
             if self.mode == "falsify":
                 print("Falsification ended successfully.")
