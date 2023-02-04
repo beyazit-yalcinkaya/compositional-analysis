@@ -1039,7 +1039,7 @@ Crossroad {
 DEF WALL SolidBox {
   translation -50 150 3
   rotation 0 0 1 -1.5723853071795864
-  size 2 8 6
+  size 2 10 6
   appearance PBRAppearance {
     baseColor 1.0 0.0 0.0
     transparency 0.0
