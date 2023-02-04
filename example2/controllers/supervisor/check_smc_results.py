@@ -19,13 +19,15 @@ import matplotlib.pyplot as plt
 # print("Monolithic:", np.mean(monolithic), np.std(monolithic))
 # print("Compositional:", np.mean(compositional), np.std(compositional))
 
+s0W = np.genfromtxt("smc_csvs" + "/subscenario0W_post_conditions.csv", delimiter=",", skip_header=True)
+s0B = np.genfromtxt("smc_csvs" + "/subscenario0B_post_conditions.csv", delimiter=",", skip_header=True)
 s1 = np.genfromtxt("smc_csvs" + "/subscenario1_post_conditions.csv", delimiter=",", skip_header=True)
 s2L = np.genfromtxt("smc_csvs" + "/subscenario2L_post_conditions.csv", delimiter=",", skip_header=True)
 s2S = np.genfromtxt("smc_csvs" + "/subscenario2S_post_conditions.csv", delimiter=",", skip_header=True)
 s2R = np.genfromtxt("smc_csvs" + "/subscenario2R_post_conditions.csv", delimiter=",", skip_header=True)
 
 s = np.genfromtxt("smc_csvs" + "/scenario_post_conditions.csv", delimiter=",", skip_header=True)
-# s = s2S
+# s = s2R
 sems = []
 delta_sems = []
 previous_sem = None
@@ -35,7 +37,9 @@ for i in range(2, np.size(s, axis=0)):
 	# print("Rounded:", np.round(sem, 5))
 	sems.append(sem)
 	if previous_sem is not None:
-		delta_sems.append(abs(sem - previous_sem))
+		delta_sem = abs(sem - previous_sem)
+		delta_sems.append(delta_sem)
+		print(delta_sem)
 	# if previous_sem is not None:
 	# 	print(abs(sem - previous_sem)/previous_sem)
 	# if previous_sem is not None and np.all(abs(sem - previous_sem)/previous_sem <= 0.01):
@@ -48,5 +52,5 @@ for i in range(2, np.size(s, axis=0)):
 	previous_sem = sem
 sems = np.array(sems)
 # sems = sems / np.max(sems, axis=0)
-plt.plot(delta_sems[300:])
+plt.plot(delta_sems[20:])
 plt.show()

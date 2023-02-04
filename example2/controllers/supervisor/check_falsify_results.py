@@ -21,25 +21,25 @@ for i in range(1, 11):
 print("Monolithic:", np.mean(monolithic), np.std(monolithic))
 print("Compositional:", np.mean(compositional), np.std(compositional))
 
-# for ss in ["scenario", "subscenario0W", "subscenario0B", "subscenario1", "subscenario2L", "subscenario2S", "subscenario2R"]:
-# 	for i in range(1, 11):
-# 		s = np.genfromtxt("random/falsify_csvs_" + str(i) + "/" + ss + "_post_conditions.csv", delimiter=",", skip_header=True)
-# 		sems = []
-# 		delta_sems = []
-# 		previous_sem = None
-# 		for i in range(2, np.size(s, axis=0)):
-# 			sem = np.std(s[:i], ddof=1, axis=0) / np.sqrt(np.size(s[:i], axis=0))
-# 			print("SEM:", sem)
-# 			# print("Rounded:", np.round(sem, 5))
-# 			sems.append(sem)
-# 			delta_sem = None
-# 			if previous_sem is not None:
-# 				delta_sem = abs(sem - previous_sem)
-# 				delta_sems.append(delta_sem)
-# 			if delta_sem is not None and np.all(delta_sem <= 0.001):
-# 				print("DELTA SEM:", delta_sem)
-# 				input("HEY")
-# 			previous_sem = sem
-# 		# sems = np.array(sems)
-# 		# plt.plot(sems)
-# 		# plt.show()
+for ss in ["scenario", "subscenario0W", "subscenario0B", "subscenario1", "subscenario2L", "subscenario2S", "subscenario2R"]:
+	for i in range(1, 11):
+		s = np.genfromtxt("random/falsify_csvs_" + str(i) + "/" + ss + "_post_conditions.csv", delimiter=",", skip_header=True)
+		sems = []
+		delta_sems = []
+		previous_sem = None
+		for i in range(2, np.size(s, axis=0)):
+			sem = np.std(s[:i], ddof=1, axis=0) / np.sqrt(np.size(s[:i], axis=0))
+			print("SEM:", sem)
+			# print("Rounded:", np.round(sem, 5))
+			sems.append(sem)
+			delta_sem = None
+			if previous_sem is not None:
+				delta_sem = abs(sem - previous_sem)
+				delta_sems.append(delta_sem)
+			if delta_sem is not None and np.all(delta_sem <= 0.005):
+				print("DELTA SEM:", delta_sem)
+				input("HEY")
+			previous_sem = sem
+		# sems = np.array(sems)
+		# plt.plot(sems)
+		# plt.show()

@@ -28,7 +28,7 @@ class Task(webots_task):
     def __init__(self, N_SIM_STEPS, supervisor):
         super().__init__(N_SIM_STEPS, supervisor)
         self.trajectory = []
-        self.epsilon = 0.001
+        self.epsilon = 0.005
         self.sample_ind = 0
         self.mode = None
         self.ind = None
