@@ -41,9 +41,12 @@ class Subscenario(WebotsObject):
 
 s = Subscenario
 
-# oil_barrel_1 = OilBarrel1 at Range(-30.0, -10.0) @ Range(-115.0, -95.0)
-# oil_barrel_2 = OilBarrel2 at Range(-10.0, 10.0) @ Range(-115.0, -95.0)
-# oil_barrel_3 = OilBarrel3 at Range(10.0, 30.0) @ Range(-115.0, -95.0)
+wall_samples = np.genfromtxt(MODE + "_csvs/subscenario0W_post_conditions.csv", delimiter=",", names=True)
+barrel_samples = np.genfromtxt(MODE + "_csvs/subscenario0B_post_conditions.csv", delimiter=",", names=True)
 
-lead = Lead at Range(-56.5, -52.5) @ Range(-106, -104), facing Range(-5.0, 5.0) deg
-ego = Follower at Range(-66.5, -62.5) @ Range(-106, -104), facing Range(-5.0, 5.0) deg
+samples = np.concatenate((wall_samples, barrel_samples), axis=0)
+
+sample = Uniform(*samples)
+
+ego = Follower at sample[0] @ sample[1], facing sample[2]*57.2958 deg
+lead = Lead at sample[3] @ sample[4], facing sample[5]*57.2958 deg

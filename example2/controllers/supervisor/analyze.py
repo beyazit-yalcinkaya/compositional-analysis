@@ -19,13 +19,17 @@ MODE = sys.argv[1]
 assert MODE in ["falsify", "smc"]
 print("Mode:", MODE)
 
-METHOD = sys.argv[2]
+SAMPLER_TYPE = sys.argv[2]
+assert SAMPLER_TYPE in ["random", "halton"]
+print("Sampler Type:", SAMPLER_TYPE)
+
+METHOD = sys.argv[3]
 assert METHOD in ["compositional", "monolithic"]
 print("Method:", METHOD)
 
 BATCH_SIZE = None
 try:
-    BATCH_SIZE = int(sys.argv[3])
+    BATCH_SIZE = int(sys.argv[4])
     assert BATCH_SIZE > 0
     print("Batch Size:", BATCH_SIZE)
 except:
@@ -55,7 +59,7 @@ def get_falsifier(scenario, specification):
 
     falsifier = mtl_falsifier(
         sampler=sampler,
-        sampler_type="halton",
+        sampler_type=SAMPLER_TYPE,
         specification=specification,
         falsifier_params=falsifier_params,
         server_options=server_options
@@ -66,7 +70,7 @@ def get_falsifier(scenario, specification):
 # Assumption: A subscenario can only be in one subscenario group
 subscenario_groups = None
 if METHOD == "compositional":
-    subscenario_groups = [["subscenario1"], ["subscenario2L", "subscenario2S", "subscenario2R"]]
+    subscenario_groups = [["subscenario0W", "subscenario0B"], ["subscenario1"], ["subscenario2L", "subscenario2S", "subscenario2R"]]
 else:
     subscenario_groups = [["scenario"]]
 

@@ -28,27 +28,35 @@ class Task(webots_task):
     def __init__(self, N_SIM_STEPS, supervisor):
         super().__init__(N_SIM_STEPS, supervisor)
         self.trajectory = []
-        self.epsilon = 0.001
+        self.epsilon = 0.005
         self.sample_ind = 0
         self.mode = None
         self.ind = None
-        self.monolithic_scenario_convergence_flags = {"L": False, "S": False, "R": False}
         self.previous_sem = None
 
     def use_sample(self, sample):
         self.sample_ind += 1
         print("Sample:", self.sample_ind)
         self.trajectory = []
+
         ego = self.supervisor.getFromDef("FOLLOWER")
         lead = self.supervisor.getFromDef("LEAD")
         obstacle = self.supervisor.getFromDef("OBSTACLE")
         oil_barrel_1 = self.supervisor.getFromDef("OIL_BARREL_1")
         oil_barrel_2 = self.supervisor.getFromDef("OIL_BARREL_2")
         oil_barrel_3 = self.supervisor.getFromDef("OIL_BARREL_3")
+        wall = self.supervisor.getFromDef("WALL")
+
         is_obstacle_found = False
         obstacle_positions = {}
         obstacle_headings = {}
         obstacle_colors = {}
+
+        oil_barrel_1_position = None
+        oil_barrel_2_position = None
+        oil_barrel_3_position = None
+        wall_position = None
+
         for obj in sample.objects:
             if obj.webotsName == "SUBSCENARIO":
                 self.ind = obj.ind[-1]
@@ -99,37 +107,47 @@ class Task(webots_task):
                 obstacle_positions[obj.type[-1]] = obj.position
                 obstacle_headings[obj.type[-1]] = obj.heading
                 obstacle_colors[obj.type[-1]] = obj.color
+            elif obj.webotsName == "WALL":
+                wall_position = obj.position
             elif obj.webotsName == "OIL_BARREL_1":
-                position = oil_barrel_1.getField("translation").getSFVec3f()
-                position[0], position[1] = obj.position
-                oil_barrel_1.getField("translation").setSFVec3f(position)
-                heading = oil_barrel_1.getField("rotation").getSFRotation()
-                heading[3] = obj.heading
-                oil_barrel_1.getField("rotation").setSFRotation(heading)
+                oil_barrel_1_position = obj.position
             elif obj.webotsName == "OIL_BARREL_2":
-                position = oil_barrel_2.getField("translation").getSFVec3f()
-                position[0], position[1] = obj.position
-                oil_barrel_2.getField("translation").setSFVec3f(position)
-                heading = oil_barrel_2.getField("rotation").getSFRotation()
-                heading[3] = obj.heading
-                oil_barrel_2.getField("rotation").setSFRotation(heading)
+                oil_barrel_2_position = obj.position
             elif obj.webotsName == "OIL_BARREL_3":
-                position = oil_barrel_3.getField("translation").getSFVec3f()
-                position[0], position[1] = obj.position
-                oil_barrel_3.getField("translation").setSFVec3f(position)
-                heading = oil_barrel_3.getField("rotation").getSFRotation()
-                heading[3] = obj.heading
-                oil_barrel_3.getField("rotation").setSFRotation(heading)
+                oil_barrel_3_position = obj.position
         if is_obstacle_found:
             position = obstacle.getField("translation").getSFVec3f()
-            position[0], position[1] = obstacle_positions[self.ind]
+            ind = None
+            if "L" in self.ind:
+                ind = "L"
+            elif "S" in self.ind:
+                ind = "S"
+            elif "R" in self.ind:
+                ind = "R"
+            position[0], position[1] = obstacle_positions[ind]
             obstacle.getField("translation").setSFVec3f(position)
             heading = obstacle.getField("rotation").getSFRotation()
-            heading[3] = obstacle_headings[self.ind]
+            heading[3] = obstacle_headings[ind]
             obstacle.getField("rotation").setSFRotation(heading)
-            obstacle.getField("appearance").getSFNode().getField("baseColor").setSFColor(obstacle_colors[self.ind])
-        else:
-            obstacle.getField("translation").setSFVec3f([-100.0, -100.0, -100.0])
+            obstacle.getField("appearance").getSFNode().getField("baseColor").setSFColor(obstacle_colors[ind])
+        if "W" in self.ind:
+            if wall_position is not None:
+                position = wall.getField("translation").getSFVec3f()
+                position[0], position[1] = wall_position
+                wall.getField("translation").setSFVec3f(position)
+        elif "B" in self.ind:
+            if oil_barrel_1_position is not None:
+                position = oil_barrel_1.getField("translation").getSFVec3f()
+                position[0], position[1] = oil_barrel_1_position
+                oil_barrel_1.getField("translation").setSFVec3f(position)
+            if oil_barrel_2_position is not None:
+                position = oil_barrel_2.getField("translation").getSFVec3f()
+                position[0], position[1] = oil_barrel_2_position
+                oil_barrel_2.getField("translation").setSFVec3f(position)
+            if oil_barrel_3_position is not None:
+                position = oil_barrel_3.getField("translation").getSFVec3f()
+                position[0], position[1] = oil_barrel_3_position
+                oil_barrel_3.getField("translation").setSFVec3f(position)
         self.supervisor.step(TIME_STEP)
         ego.moveViewpoint()
         return ego, lead
@@ -161,14 +179,16 @@ class Task(webots_task):
         ego_x, ego_y, _ = ego.getPosition()
         lead_x, lead_y, _ = lead.getPosition()
         sim_steps = 0
-        while ((self.subscenario != "subscenario1" or (ego_y < -78.5 and lead_y < -68.5)) and
+        while ((self.subscenario != "subscenario0W" or (ego_x < -66.5 and lead_x < -56.5)) and
+               (self.subscenario != "subscenario0B" or (ego_x < -66.5 and lead_x < -56.5)) and
+               (self.subscenario != "subscenario1" or (ego_y < -78.5 and lead_y < -68.5)) and
                (self.subscenario != "subscenario2L" or (ego_x > 5.5 and lead_x > -4.5)) and
                (self.subscenario != "subscenario2S" or (ego_y < -5.5 and lead_y < 4.5)) and
                (self.subscenario != "subscenario2R" or (ego_y < -14.5 and lead_y < -4.5)) and 
-               ((ego_y < -78.5 and lead_y < -68.5) or
-                ((self.subscenario + self.ind != "scenarioL" or (ego_x > 5.5 and lead_x > -4.5)) and
-                 (self.subscenario + self.ind != "scenarioS" or (ego_y < -5.5 and lead_y < 4.5)) and
-                 (self.subscenario + self.ind != "scenarioR" or (ego_y < -14.5 and lead_y < -4.5))))):
+               (((ego_y < -78.5 and lead_y < -68.5) or (ego_x < -66.5 and lead_x < -56.5)) or
+                (((self.subscenario + self.ind != "scenarioWL" and self.subscenario + self.ind != "scenarioBL") or (ego_x > 5.5 and lead_x > -4.5)) and
+                 ((self.subscenario + self.ind != "scenarioWS" and self.subscenario + self.ind != "scenarioBS") or (ego_y < -5.5 and lead_y < 4.5)) and
+                 ((self.subscenario + self.ind != "scenarioWR" and self.subscenario + self.ind != "scenarioBR") or (ego_y < -14.5 and lead_y < -4.5))))):
             self.supervisor.step(TIME_STEP)
             sim_steps += 1
             ego_x, ego_y, _ = ego.getPosition()
