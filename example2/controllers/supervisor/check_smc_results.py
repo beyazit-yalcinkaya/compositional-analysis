@@ -1,24 +1,53 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 monolithic = []
 compositional = []
-# for i in range(1, 11):
+s = np.genfromtxt("halton/smc_csvs/scenario_results.csv", delimiter=",", names=True)
 s0W = np.genfromtxt("halton/smc_csvs/subscenario0W_results.csv", delimiter=",", names=True)
 s0B = np.genfromtxt("halton/smc_csvs/subscenario0B_results.csv", delimiter=",", names=True)
-s = np.genfromtxt("halton/smc_csvs/scenario_results.csv", delimiter=",", names=True)
 s1 = np.genfromtxt("halton/smc_csvs/subscenario1_results.csv", delimiter=",", names=True)
 s2L = np.genfromtxt("halton/smc_csvs/subscenario2L_results.csv", delimiter=",", names=True)
 s2S = np.genfromtxt("halton/smc_csvs/subscenario2S_results.csv", delimiter=",", names=True)
 s2R = np.genfromtxt("halton/smc_csvs/subscenario2R_results.csv", delimiter=",", names=True)
-m = s["sim_steps"].sum()
-monolithic.append(m)
-c = s0W["sim_steps"].sum() + s0B["sim_steps"].sum() + s1["sim_steps"].sum() + s2L["sim_steps"].sum() + s2S["sim_steps"].sum() + s2R["sim_steps"].sum()
-compositional.append(c)
-print("---- Sample ----")
-print("Monolithic:", m)
-print("Compositional:", c)
-print("-----------------")
+# monolithic.append(s["sim_steps"].sum())
+# compositional.append(s1["sim_steps"].sum() + s2L["sim_steps"].sum() + s2S["sim_steps"].sum() + s2R["sim_steps"].sum())
+# print("---- Sample ----")
+# print("Monolithic:", s["sim_steps"].sum())
+# print("Compositional:", s1["sim_steps"].sum() + s2L["sim_steps"].sum() + s2S["sim_steps"].sum() + s2R["sim_steps"].sum())
+# print("-----------------")
+
+# print("Monolithic:", np.mean(monolithic), np.std(monolithic))
+# print("Compositional:", np.mean(compositional), np.std(compositional))
+print("scenario:", s["sim_steps"].mean(), s["sim_steps"].size)
+print("subscenario0W:", s0W["sim_steps"].mean(), s0W["sim_steps"].size)
+print("subscenario0B:", s0B["sim_steps"].mean(), s0B["sim_steps"].size)
+print("subscenario1:", s1["sim_steps"].mean(), s1["sim_steps"].size)
+print("subscenario2L:", s2L["sim_steps"].mean(), s2L["sim_steps"].size)
+print("subscenario2S:", s2S["sim_steps"].mean(), s2S["sim_steps"].size)
+print("subscenario2R:", s2R["sim_steps"].mean(), s2R["sim_steps"].size)
+ss = np.concatenate([s0W["sim_steps"], s0B["sim_steps"], s1["sim_steps"], s2L["sim_steps"], s2S["sim_steps"], s2R["sim_steps"]], axis=0)
+print("Average:", ss.mean(), ss.size)
+
+# monolithic = []
+# compositional = []
+# # for i in range(1, 11):
+# s0W = np.genfromtxt("halton/smc_csvs/subscenario0W_results.csv", delimiter=",", names=True)
+# s0B = np.genfromtxt("halton/smc_csvs/subscenario0B_results.csv", delimiter=",", names=True)
+# s = np.genfromtxt("halton/smc_csvs/scenario_results.csv", delimiter=",", names=True)
+# s1 = np.genfromtxt("halton/smc_csvs/subscenario1_results.csv", delimiter=",", names=True)
+# s2L = np.genfromtxt("halton/smc_csvs/subscenario2L_results.csv", delimiter=",", names=True)
+# s2S = np.genfromtxt("halton/smc_csvs/subscenario2S_results.csv", delimiter=",", names=True)
+# s2R = np.genfromtxt("halton/smc_csvs/subscenario2R_results.csv", delimiter=",", names=True)
+# m = s["sim_steps"].sum()
+# monolithic.append(m)
+# c = s0W["sim_steps"].sum() + s0B["sim_steps"].sum() + s1["sim_steps"].sum() + s2L["sim_steps"].sum() + s2S["sim_steps"].sum() + s2R["sim_steps"].sum()
+# compositional.append(c)
+# print("---- Sample ----")
+# print("Monolithic:", m)
+# print("Compositional:", c)
+# print("-----------------")
 
 # print("Monolithic:", np.mean(monolithic), np.std(monolithic))
 # print("Compositional:", np.mean(compositional), np.std(compositional))
