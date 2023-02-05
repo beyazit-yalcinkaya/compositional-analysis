@@ -79,7 +79,7 @@ if MODE == "falsify":
 	# Add some text for labels, title and custom x-axis tick labels, etc.
 	ax.set_ylim([0, 100000])
 	ax.ticklabel_format(style='sci', axis='y', scilimits=(6,6))
-	ax.set_ylabel('Total Number of Simulation Steps')
+	ax.set_ylabel('Number of Simulator Steps')
 	# ax.set_title('Compositional Falsification -- Case Study 1')
 	ax.set_xticks(ind)
 	ax.set_xticklabels(("Uniform", "Halton"))
@@ -137,7 +137,7 @@ else:
 		# Add some text for labels, title and custom x-axis tick labels, etc.
 		ax.ticklabel_format(style='sci', axis='y', scilimits=(6,6))
 		ax.set_ylim([0, 2000000])
-		ax.set_ylabel('Total Number of Simulation Steps')
+		ax.set_ylabel('Number of Simulator Steps')
 		# ax.set_title('Compositional Statistical Verification -- Case Study 1')
 		ax.set_xticks(ind)
 		ax.set_xticklabels(("Uniform", "Halton"))
